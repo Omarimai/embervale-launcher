@@ -53,18 +53,50 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # The release may already exist -- the client repo's workflow does not
-          # create it, but a re-run of this one would.
+          # GitHub's API answers 5xx often enough to matter: v0.1.2 built
+          # cleanly and then died here on a 503, throwing away six minutes of
+          # compute for a fault that had nothing to do with the build. Both
+          # calls below are safe to repeat, so repeat them.
+          retry() {
+            local attempt
+            for attempt in 1 2 3 4 5; do
+              if "$@"; then
+                return 0
+              fi
+              echo "::warning::attempt $attempt of 5 failed, retrying in $((attempt * 10))s"
+              sleep $((attempt * 10))
+            done
+            echo "::error::gave up after 5 attempts"
+            return 1
+          }
+
+          # No existence check first: a 404 from one and a 503 from the other
+          # are indistinguishable by exit code, so a check that retried would
+          # spend a minute failing on every genuinely new tag. Creating and
+          # forgiving the one error that means "nothing to do" is cheaper.
+          #
           # --latest is asserted rather than left to default: the game ships
           # from this repository too, onto the `live` tag, and the website's
           # download link resolves through /releases/latest/. Whichever release
           # is newest by date would otherwise take it.
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 \
-            || gh release create "$GITHUB_REF_NAME" \
-                 --title "Embervale launcher $GITHUB_REF_NAME" \
-                 --latest \
-                 --notes "Download EmbervaleLauncher.exe and run it."
-          gh release upload "$GITHUB_REF_NAME" dist/EmbervaleLauncher.exe --clobber
+          create() {
+            local out
+            if out=$(gh release create "$GITHUB_REF_NAME" \
+                       --title "Embervale launcher $GITHUB_REF_NAME" \
+                       --latest \
+                       --notes "Download EmbervaleLauncher.exe and run it." 2>&1); then
+              return 0
+            fi
+            if grep -qi 'already exists' <<<"$out"; then
+              echo "release $GITHUB_REF_NAME already exists"
+              return 0
+            fi
+            echo "$out" >&2
+            return 1
+          }
+
+          retry create
+          retry gh release upload "$GITHUB_REF_NAME" dist/EmbervaleLauncher.exe --clobber
 
       - name: Keep the build when there is no tag
         if: "!startsWith(github.ref, 'refs/tags/')"
