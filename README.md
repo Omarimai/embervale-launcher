@@ -25,8 +25,17 @@ looking executable that crashes on start.
 
 ## Configuring it
 
-Defaults are compiled in. To point a build at a different channel, put a
-`launcher.toml` beside the executable:
+By default it reads:
+
+    https://github.com/Omarimai/embervale-client/releases/latest/download/manifest.json
+
+`/releases/latest/download/` is a redirect GitHub maintains, so that URL keeps
+resolving to the newest release without this being rebuilt -- which matters,
+because a launcher already on a player's disk is the one thing a release cannot
+update.
+
+To point a build at a different channel, put a `launcher.toml` beside the
+executable:
 
 ```toml
 manifest_url = "https://embervale.example/updates/manifest.json"
@@ -84,3 +93,19 @@ helper that swaps the exe after the launcher exits; that is not built yet.
 **Unsigned binaries get flagged.** SmartScreen and Defender will warn on a
 freshly published launcher until it earns reputation. A code signing
 certificate is the only real fix.
+
+## Releasing
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+`.github/workflows/release.yml` runs the tests, builds, and attaches the binary
+to the GitHub release as **EmbervaleLauncher.exe**. That name is fixed, because
+the website links to `/releases/latest/download/EmbervaleLauncher.exe` and
+should never need editing for a release.
+
+The game is released separately, from the client repo. The two are independent:
+tagging the client publishes a new manifest that every installed launcher picks
+up on its next run, without anyone downloading a new launcher.

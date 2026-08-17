@@ -12,8 +12,11 @@ files. Hand it the exported game and the URL the files will be served from:
         --launch Embervale.exe \
         --out dist/0.4.1/manifest.json
 
-Every file under --dir is included except the manifest itself, so what the
-launcher installs is exactly what was uploaded -- no list to keep in step.
+Every file under --dir is included except the manifest itself and dotfiles, so
+what the launcher installs is exactly what was uploaded -- no list to keep in
+step. Dotfiles are skipped because build tooling leaves them in output
+directories -- Godot's .gdignore, macOS's .DS_Store -- and a player has no use
+for any of them.
 """
 
 from __future__ import annotations
@@ -68,6 +71,9 @@ def main() -> int:
     files = []
     for path in sorted(root.rglob("*")):
         if not path.is_file() or path.resolve() == out:
+            continue
+        rel_parts = path.relative_to(root).parts
+        if any(part.startswith(".") for part in rel_parts):
             continue
         rel = path.relative_to(root).as_posix()
         files.append({

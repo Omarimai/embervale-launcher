@@ -11,7 +11,13 @@ use serde::Deserialize;
 
 /// Fallback when there is no `launcher.toml`. Points at the release channel the
 /// website links to.
-const DEFAULT_MANIFEST_URL: &str = "https://embervale.example/updates/manifest.json";
+///
+/// `/releases/latest/download/` is a redirect GitHub maintains, so this URL
+/// keeps working across every release without the launcher being rebuilt --
+/// which matters, because a launcher already on a player's disk is the one
+/// thing a release cannot update.
+const DEFAULT_MANIFEST_URL: &str =
+    "https://github.com/Omarimai/embervale-client/releases/latest/download/manifest.json";
 
 /// Files the manifest describes are installed here, relative to the launcher.
 ///
