@@ -15,10 +15,17 @@ mod sync;
 mod theme;
 
 fn main() -> eframe::Result<()> {
+    // Fixed and small, the size of the updaters this shape of launcher comes
+    // from. A launcher is a doorway, not a place to spend time: it should sit in
+    // a corner of the screen rather than take it over, and at one size the
+    // layout can be composed instead of made to survive being stretched.
     let mut viewport = eframe::egui::ViewportBuilder::default()
-        .with_inner_size([1000.0, 620.0])
-        .with_min_inner_size([860.0, 540.0])
-        .with_resizable(true)
+        .with_inner_size([app::WINDOW.x, app::WINDOW.y])
+        .with_resizable(false)
+        .with_maximize_button(false)
+        // Its own title bar, so the window reads as part of the game rather
+        // than as a dialog the OS drew a frame around.
+        .with_decorations(false)
         .with_title("Embervale");
 
     if let Some(icon) = app::icon() {
