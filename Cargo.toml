@@ -1,0 +1,22 @@
+[package]
+name = "embervale-launcher"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eframe = { version = "0.35.0", default-features = false, features = ["glow", "default_fonts"] }
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sha2 = "0.11.0"
+toml = "1.1.4"
+ureq = "3.4.0"
+
+# The launcher is downloaded before anyone has seen the game, so its size is
+# the first thing it says about the project. These take it from ~14 MB to ~7.
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
