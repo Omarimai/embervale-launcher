@@ -10,14 +10,21 @@ use std::path::{Path, PathBuf};
 use serde::Deserialize;
 
 /// Fallback when there is no `launcher.toml`. Points at the release channel the
-/// website links to.
+/// client repository publishes into.
 ///
-/// `/releases/latest/download/` is a redirect GitHub maintains, so this URL
-/// keeps working across every release without the launcher being rebuilt --
-/// which matters, because a launcher already on a player's disk is the one
-/// thing a release cannot update.
+/// Game builds land in *this* repository rather than the client's, because the
+/// client is private and release assets on a private repository cannot be
+/// fetched without credentials.
+///
+/// They land on a fixed tag, `live`, which each build overwrites -- so this URL
+/// keeps working across every release without the launcher being rebuilt, which
+/// matters because a launcher already on a player's disk is the one thing a
+/// release cannot update. A fixed tag rather than `/releases/latest/download/`:
+/// that redirect points at whichever release is newest repository-wide, and
+/// this repository also publishes the launcher's own releases, which carry no
+/// manifest at all.
 const DEFAULT_MANIFEST_URL: &str =
-    "https://github.com/Omarimai/embervale-client/releases/latest/download/manifest.json";
+    "https://github.com/Omarimai/embervale-launcher/releases/download/live/manifest.json";
 
 /// Files the manifest describes are installed here, relative to the launcher.
 ///

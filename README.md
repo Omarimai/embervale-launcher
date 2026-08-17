@@ -27,12 +27,18 @@ looking executable that crashes on start.
 
 By default it reads:
 
-    https://github.com/Omarimai/embervale-client/releases/latest/download/manifest.json
+    https://github.com/Omarimai/embervale-launcher/releases/download/live/manifest.json
 
-`/releases/latest/download/` is a redirect GitHub maintains, so that URL keeps
-resolving to the newest release without this being rebuilt -- which matters,
+Game builds are published into *this* repository, not the client's: the client
+is private, and release assets on a private repository cannot be fetched without
+credentials.
+
+`live` is a fixed tag that each client build overwrites, so that URL keeps
+resolving to the newest build without this being rebuilt -- which matters,
 because a launcher already on a player's disk is the one thing a release cannot
-update.
+update. A fixed tag rather than `/releases/latest/download/`, because that
+redirect points at whichever release is newest repository-wide, and the
+launcher's own releases live here too and carry no manifest.
 
 To point a build at a different channel, put a `launcher.toml` beside the
 executable:
@@ -106,6 +112,18 @@ to the GitHub release as **EmbervaleLauncher.exe**. That name is fixed, because
 the website links to `/releases/latest/download/EmbervaleLauncher.exe` and
 should never need editing for a release.
 
-The game is released separately, from the client repo. The two are independent:
-tagging the client publishes a new manifest that every installed launcher picks
-up on its next run, without anyone downloading a new launcher.
+The game is released separately, by tagging the client repo -- but it publishes
+its build *here*, onto the `live` release. The two are independent: tagging the
+client publishes a new manifest that every installed launcher picks up on its
+next run, without anyone downloading a new launcher.
+
+The two kinds of release share this repository without colliding, because only
+one release can be the latest and the launcher's own needs to be it. Version
+tags (`v0.1.0`, ...) are launcher builds and take `latest` in turn; `live` is
+the game, is overwritten in place, and is pinned to `--latest=false`. The
+client's workflow re-asserts that on every publish. If `live` ever became the
+latest release, the website's download link would 404.
+
+Publishing across repositories needs credentials the default workflow token does
+not have, so the client repo holds a `LAUNCHER_RELEASE_TOKEN` secret: a
+fine-grained PAT with contents:write on this repository.

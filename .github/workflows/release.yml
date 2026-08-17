@@ -55,9 +55,14 @@ jobs:
         run: |
           # The release may already exist -- the client repo's workflow does not
           # create it, but a re-run of this one would.
+          # --latest is asserted rather than left to default: the game ships
+          # from this repository too, onto the `live` tag, and the website's
+          # download link resolves through /releases/latest/. Whichever release
+          # is newest by date would otherwise take it.
           gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 \
             || gh release create "$GITHUB_REF_NAME" \
                  --title "Embervale launcher $GITHUB_REF_NAME" \
+                 --latest \
                  --notes "Download EmbervaleLauncher.exe and run it."
           gh release upload "$GITHUB_REF_NAME" dist/EmbervaleLauncher.exe --clobber
 
