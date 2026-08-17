@@ -225,13 +225,20 @@ impl eframe::App for Launcher {
         self.drain();
 
         let ctx = ui.ctx().clone();
-        let rect = ui.max_rect();
+
+        // The window, not ui.max_rect(): the root Ui is handed a rect larger
+        // than the viewport, so laying the bottom bar out against max_rect puts
+        // it below the bottom edge, where the art hides that anything is wrong.
+        //
+        // Art fills the viewport; controls stay inside the content rect, which
+        // on a desktop is the same rectangle and elsewhere is the part not
+        // behind a notch or status bar.
         let background = self.background(&ctx);
-        paint_background(ui, rect, background);
+        paint_background(ui, ctx.viewport_rect(), background);
 
         // Bottom bar is a fixed height so the art above it is never partly
         // covered by a control bar that grew.
-        let (art, bar) = split_bottom(rect, 108.0);
+        let (art, bar) = split_bottom(ctx.content_rect(), 108.0);
 
         self.header(ui, art);
         self.news(ui, art);
