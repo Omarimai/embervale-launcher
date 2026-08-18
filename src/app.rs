@@ -626,24 +626,68 @@ impl Launcher {
             Vec2::new(rect.width() - 14.0, 62.0),
         );
 
-        let play = egui::Button::new(
-            RichText::new(label)
-                .size(19.0)
-                .strong()
-                .color(Color32::from_rgb(0x1a, 0x12, 0x05)),
-        )
-        .fill(if enabled { theme::EMBER } else { theme::scrim(90) })
-        .corner_radius(CornerRadius::same(5))
-        .stroke(Stroke::new(
-            1.0,
-            if enabled {
-                theme::EMBER_BRIGHT
-            } else {
-                theme::scrim(0)
-            },
-        ));
+        // Both buttons are drawn rather than built from egui::Button: setting
+        // .fill() pins one colour for every state, so egui's own hover and
+        // press shading never renders and the button feels dead under the
+        // cursor.
+        let response = ui.interact(
+            play_at,
+            ui.id().with("play"),
+            if enabled { Sense::click() } else { Sense::hover() },
+        );
+        let response = if enabled {
+            response.on_hover_cursor(egui::CursorIcon::PointingHand)
+        } else {
+            response
+        };
+        let held = enabled && response.is_pointer_button_down_on();
 
-        if ui.put(play_at, play).clicked() && enabled {
+        let face = if !enabled {
+            theme::scrim(120)
+        } else if held {
+            theme::EMBER.gamma_multiply(0.82)
+        } else if response.hovered() {
+            theme::EMBER_BRIGHT
+        } else {
+            theme::EMBER
+        };
+        // Pressing sinks it a pixel. On PLAY the window closes immediately
+        // after, so this is the only acknowledgement the click ever gets.
+        let at = if held {
+            play_at.translate(Vec2::new(0.0, 1.0))
+        } else {
+            play_at
+        };
+
+        ui.painter().rect_filled(at, CornerRadius::same(5), face);
+        ui.painter().rect_stroke(
+            at,
+            CornerRadius::same(5),
+            Stroke::new(
+                1.0,
+                if enabled {
+                    theme::EMBER_BRIGHT
+                } else {
+                    theme::scrim(170)
+                },
+            ),
+            StrokeKind::Inside,
+        );
+        // The dark ink that reads on the ember fill disappears on the dark one,
+        // which is what WAIT was: near-black text on a near-black button.
+        ui.painter().text(
+            at.center(),
+            egui::Align2::CENTER_CENTER,
+            label,
+            egui::FontId::proportional(19.0),
+            if enabled {
+                Color32::from_rgb(0x1a, 0x12, 0x05)
+            } else {
+                theme::TEXT_DIM
+            },
+        );
+
+        if response.clicked() {
             match self.phase {
                 Phase::Ready => self.play(ctx),
                 Phase::Failed => self.retry(),
@@ -655,11 +699,48 @@ impl Launcher {
             egui::pos2(play_at.center().x - 16.0, play_at.bottom() + 12.0),
             Vec2::splat(32.0),
         );
-        let gear = egui::Button::new(RichText::new("⚙").size(15.0).color(theme::TEXT))
-            .fill(theme::HAZE)
-            .corner_radius(CornerRadius::same(16))
-            .stroke(Stroke::new(1.0, theme::scrim(160)));
-        if ui.put(gear_at, gear).on_hover_text("Settings").clicked() {
+        let gear = ui
+            .interact(gear_at, ui.id().with("gear"), Sense::click())
+            .on_hover_cursor(egui::CursorIcon::PointingHand);
+        let gear_held = gear.is_pointer_button_down_on();
+        let centre = gear_at.center();
+
+        ui.painter().circle_filled(
+            centre,
+            16.0,
+            if gear_held {
+                theme::scrim(210)
+            } else if gear.hovered() {
+                theme::panel(250)
+            } else {
+                theme::HAZE
+            },
+        );
+        ui.painter().circle_stroke(
+            centre,
+            16.0,
+            Stroke::new(
+                1.0,
+                if gear.hovered() {
+                    theme::EMBER
+                } else {
+                    theme::scrim(160)
+                },
+            ),
+        );
+        ui.painter().text(
+            if gear_held {
+                centre + Vec2::new(0.0, 1.0)
+            } else {
+                centre
+            },
+            egui::Align2::CENTER_CENTER,
+            "\u{2699}",
+            egui::FontId::proportional(15.0),
+            theme::TEXT,
+        );
+
+        if gear.on_hover_text("Settings").clicked() {
             self.settings_open = !self.settings_open;
         }
     }
